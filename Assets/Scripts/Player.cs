@@ -5,19 +5,17 @@ using UnityEngine;
 
 public class Player : MonoBehaviour, IKitchenObjectParent {
 
-
-    public static Player Instance { get; private set; }
-
-
-
     public event EventHandler OnPickedSomething;
     public event EventHandler<OnSelectedCounterChangedEventArgs> OnSelectedCounterChanged;
     public class OnSelectedCounterChangedEventArgs : EventArgs {
         public BaseCounter selectedCounter;
     }
 
+    private ArduinoConnection arduinoConnection;
 
-    [SerializeField] private float moveSpeed = 7f;
+    public const float DefaultMoveSpeed = 7f;
+    
+    [SerializeField] private float moveSpeed;
     [SerializeField] private GameInput gameInput;
     [SerializeField] private LayerMask countersLayerMask;
     [SerializeField] private Transform kitchenObjectHoldPoint;
@@ -29,37 +27,71 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     private KitchenObject kitchenObject;
 
 
-    private void Awake() {
-        if (Instance != null) {
-            Debug.LogError("There is more than one Player instance");
-        }
-        Instance = this;
+    private void Awake()
+    {
+        arduinoConnection = FindObjectOfType<ArduinoConnection>();
     }
 
     private void Start() {
-        gameInput.OnInteractAction += GameInput_OnInteractAction;
-        gameInput.OnInteractAlternateAction += GameInput_OnInteractAlternateAction;
+        // gameInput.OnInteractAction += GameInput_OnInteractAction;
+        // gameInput.OnInteractAlternateAction += GameInput_OnInteractAlternateAction;
+
+        moveSpeed = DefaultMoveSpeed;
+
+       
+        
     }
 
-    private void GameInput_OnInteractAlternateAction(object sender, EventArgs e) {
-        if (!KitchenGameManager.Instance.IsGamePlaying()) return;
-
-        if (selectedCounter != null) {
-            selectedCounter.InteractAlternate(this);
-        }
-    }
-
-    private void GameInput_OnInteractAction(object sender, System.EventArgs e) {
-        if (!KitchenGameManager.Instance.IsGamePlaying()) return;
-
-        if (selectedCounter != null) {
-            selectedCounter.Interact(this);
-        }
-    }
+    // private void GameInput_OnInteractAlternateAction(object sender, EventArgs e) {
+    //     if (!KitchenGameManager.Instance.IsGamePlaying()) return;
+    //
+    //     if (selectedCounter != null) {
+    //         selectedCounter.InteractAlternate(this);
+    //     }
+    // }
+    //
+    // private void GameInput_OnInteractAction(object sender, System.EventArgs e) {
+    //     if (!KitchenGameManager.Instance.IsGamePlaying()) return;
+    //
+    //     if (selectedCounter != null) {
+    //         selectedCounter.Interact(this);
+    //     }
+    // }
 
     private void Update() {
         HandleMovement();
         HandleInteractions();
+        
+        if (gameObject.name == "Player1")
+        {
+            if (arduinoConnection.GetJoyLINTALT() == 1)
+            {
+                if (selectedCounter != null) {
+                    selectedCounter.InteractAlternate(this);
+                }
+            }
+            if (arduinoConnection.GetJoyLINT() == 1)
+            {
+                if (selectedCounter != null) {
+                    selectedCounter.Interact(this);
+                }
+            }
+        }
+        else
+        {
+            if (arduinoConnection.GetJoyRINTALT() == 1)
+            {
+                if (selectedCounter != null) {
+                    selectedCounter.InteractAlternate(this);
+                }
+            }
+            if (arduinoConnection.GetJoyRINT() == 1)
+            {
+                if (selectedCounter != null) {
+                    selectedCounter.Interact(this);
+                }
+            }
+        }
     }
 
     public bool IsWalking() {
@@ -67,8 +99,23 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     }
 
     private void HandleInteractions() {
-        Vector2 inputVector = gameInput.GetMovementVectorNormalized();
+        //Vector2 inputVector = gameInput.GetMovementVectorNormalized(); // TODO: Burası Arduino'dan çekilecek. Kalan kısım düzgün çalışır yine.
 
+        Vector2 inputVector;
+        
+        if (gameObject.name == "Player1")
+        {
+            inputVector = new Vector2(arduinoConnection.GetJoyLX(), arduinoConnection.GetJoyLY()).normalized;
+        }
+        else if (gameObject.name == "Player2")
+        {
+            inputVector = new Vector2(arduinoConnection.GetJoyRX(), arduinoConnection.GetJoyRY()).normalized;
+        }
+        else
+        {
+            inputVector = Vector2.zero;
+        }
+        
         Vector3 moveDir = new Vector3(inputVector.x, 0f, inputVector.y);
 
         if (moveDir != Vector3.zero) {
@@ -92,8 +139,18 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
     }
 
     private void HandleMovement() {
-        Vector2 inputVector = gameInput.GetMovementVectorNormalized();
-
+        //Vector2 inputVector = gameInput.GetMovementVectorNormalized(); // TODO: Burası Arduino'dan alınacak, kalan kısım düzgün çalışır yine.
+        Vector2 inputVector;
+        
+        if (gameObject.name == "Player1")
+        {
+            inputVector = new Vector2(arduinoConnection.GetJoyLX(), arduinoConnection.GetJoyLY()).normalized;
+        }
+        else
+        {
+            inputVector = new Vector2(arduinoConnection.GetJoyRX(), arduinoConnection.GetJoyRY()).normalized;
+        }
+        
         Vector3 moveDir = new Vector3(inputVector.x, 0f, inputVector.y);
 
         float moveDistance = moveSpeed * Time.deltaTime;
@@ -167,6 +224,11 @@ public class Player : MonoBehaviour, IKitchenObjectParent {
 
     public bool HasKitchenObject() {
         return kitchenObject != null;
+    }
+
+    public void SetMoveSpeed(float value)
+    {
+        moveSpeed = value;
     }
 
 }

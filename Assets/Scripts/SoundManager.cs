@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class SoundManager : MonoBehaviour {
 
+    [SerializeField] private Player player1;
+    [SerializeField] private Player player2;
 
     private const string PLAYER_PREFS_SOUND_EFFECTS_VOLUME = "SoundEffectsVolume";
 
@@ -28,7 +30,8 @@ public class SoundManager : MonoBehaviour {
         DeliveryManager.Instance.OnRecipeSuccess += DeliveryManager_OnRecipeSuccess;
         DeliveryManager.Instance.OnRecipeFailed += DeliveryManager_OnRecipeFailed;
         CuttingCounter.OnAnyCut += CuttingCounter_OnAnyCut;
-        Player.Instance.OnPickedSomething += Player_OnPickedSomething;
+        player1.OnPickedSomething += Player_OnPickedSomething;
+        player2.OnPickedSomething += Player_OnPickedSomething;
         BaseCounter.OnAnyObjectPlacedHere += BaseCounter_OnAnyObjectPlacedHere;
         TrashCounter.OnAnyObjectTrashed += TrashCounter_OnAnyObjectTrashed;
     }
@@ -44,7 +47,7 @@ public class SoundManager : MonoBehaviour {
     }
 
     private void Player_OnPickedSomething(object sender, System.EventArgs e) {
-        PlaySound(audioClipRefsSO.objectPickup, Player.Instance.transform.position);
+        PlaySound(audioClipRefsSO.objectPickup, player1.transform.position); // TODO: Bug olabilir ama önemli değil
     }
 
     private void CuttingCounter_OnAnyCut(object sender, System.EventArgs e) {
